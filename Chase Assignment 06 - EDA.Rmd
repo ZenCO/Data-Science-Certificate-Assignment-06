@@ -1,0 +1,200 @@
+---
+title: "Assignment 06 - EDA"
+author: "Scott Stoltzman"
+date: "5/29/2019"
+output: html_document
+---
+
+
+# Do your EDA Work in this file!
+
+# Data-Science-Certificate-Assignment-06
+Exploratory data analysis (EDA)
+
+## Assignment:  
+
+  - Open `Assignment 06 - EDA.Rmd`
+  - Do EDA and come up with an interesting analysis to chase down
+    - List all of your questions (you don't necessarily have to answer them all)
+  - You must:
+    - Utilize `ggplot` plotting
+    - Use `dplyr` data manipulation
+    - Use `if_else` within a `mutate` function
+    - Use `group_by` and `summarize`
+    
+Choose a data set from one of the following:  
+
+  - [Black Friday](https://www.kaggle.com/mehdidag/black-friday)
+  - [Wine Reviews](https://www.kaggle.com/zynicide/wine-reviews)
+  - [LA Parking Citations](https://www.kaggle.com/cityofLA/los-angeles-parking-citations)
+
+### Hint: download a csv and then use the readr::read_csv('your_file_location')
+
+
+
+
+## I want to try and figure out how to do all those steps before into one group of code:
+
+```{r}
+library(tidyverse)
+dat <- readr::read_csv("winemag-data-130k-v2.csv")
+
+countrydat <- dat %>%
+  group_by(country) %>%
+  summarize (n= n()) %>%
+  mutate(pct_n = n / sum(n))%>%
+  arrange(desc(n)) %>%
+  mutate(pct_n_running = cumsum(pct_n)) %>%
+  mutate(country1000= if_else(n >= 1000,country,'Rest'))%>%
+  mutate(countryn= n)
+
+varietydat <- dat %>%
+  group_by(variety) %>%
+  summarize (n= n()) %>%
+  mutate(pct_n = n / sum(n))%>%
+  arrange(desc(n)) %>%
+  mutate(pct_n_running = cumsum(pct_n)) %>%
+  mutate(variety1000= ifelse(n >= 1000,variety,'Rest')) %>%
+  mutate(varietyn= n)
+
+tasterdat <- winedat %>%
+  group_by(taster_name) %>%
+  summarize(n = n()) %>%
+  arrange(desc(n)) %>%
+  mutate(taster = if_else(is.na(taster_name), 'Unknown', taster_name)) %>%
+  mutate(tastern= n)
+
+sweetdat <-
+left_join(winedat, countrydat, by = c("country" = "country"))
+
+sweetdat <-
+  left_join(sweetdat, varietydat, by = c("variety" = "variety"))
+
+sweetdat <-
+  left_join(sweetdat, tasterdat, by = c("taster_name" = "taster_name"))
+
+sweetdat <-
+    select(sweetdat, points, price, country1000, countryn, variety1000, varietyn, taster, tastern)
+
+sweetdat <- rename(sweetdat, 'country' = country1000,'variety' = variety1000)
+
+sweetdat <- na.omit(sweetdat)
+
+
+  
+
+summary(sweetdat)
+  
+```
+
+
+##Looking at Price vs Points
+
+```{r}
+ggplot(sweetdat, aes(x= points, y = price))+
+  geom_smooth()+
+  geom_point()
+```
+
+
+```{r}
+ggplot(filter(sweetdat, price <= 500), aes(x= points, y = price))+
+  geom_smooth()+
+  geom_point()
+```
+
+
+A quick look shows that 
+```{r}
+ggplot(sweetdat, aes(x= points, y = price, color = country))+
+  geom_point()+
+  geom_smooth()
+
+```
+
+```{r}
+ggplot(filter(sweetdat, price <= 500), aes(x= points, y = price, color = country))+
+  geom_point()+
+  geom_smooth()
+
+```
+
+#Facet Wrap with price under $1000
+
+
+
+```{r}
+ggplot(filter(sweetdat, price<=500), aes(x= points, y = price, color = country))+
+  geom_point()+
+  geom_smooth()+
+  facet_wrap(~country)
+```
+
+
+```{r}
+ggplot(sweetdat, aes(x= points, y = price, color = country))+
+  geom_point()+
+  facet_wrap(~taster)
+```
+
+
+♣
+```{r}
+ggplot(filter(sweetdat, price<=500), aes(x= points, y = price, color = country))+
+  geom_point()+
+  facet_wrap(~taster)
+```
+
+
+
+```{r}
+ggplot(data = sweetdat)+
+geom_bar(mapping = aes(x= reorder(taster,tastern), fill = country, color = country))+
+  coord_flip()+
+  labs(x = "Taster", y= "Reviews")
+
+```
+
+
+```{r}
+ggplot(data = sweetdat)+
+geom_bar(mapping = aes(x= reorder(variety,varietyn), fill = country, color = country))+
+  coord_flip()+
+    labs(x = "Variety", y= "Reviews")
+```
+
+```{r}
+ggplot(data = sweetdat)+
+geom_bar(mapping = aes(x= reorder(variety,varietyn), fill = taster, color = taster))+
+  coord_flip()+
+    labs(x = "Variety", y= "Reviews")
+
+```
+
+
+
+```{r}
+ggplot(data = sweetdat)+
+  stat_summary(mapping = aes(x = reorder(variety,desc(variety)), y = price))+
+  coord_flip()+
+  labs(x = "Variety", y = "Price")
+
+```
+
+
+```{r}
+ggplot(data = sweetdat)+
+  stat_summary(mapping = aes(x = reorder(country,desc(country)), y = price))+
+  coord_flip()+
+  labs(x = "Country", y = "Price")
+
+```
+
+```{r}
+ggplot(data = sweetdat)+
+  stat_summary(mapping = aes(x = reorder(taster,desc(taster)), y = price))+
+  coord_flip()+
+  labs(x = "Reviewer", y = "Price")
+
+```
+

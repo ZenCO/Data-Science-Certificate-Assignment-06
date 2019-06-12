@@ -8,8 +8,170 @@ output: html_document
 
 # Do your EDA Work in this file!
 
+# Data-Science-Certificate-Assignment-06
+Exploratory data analysis (EDA)
+
+## Assignment:  
+
+  - Open `Assignment 06 - EDA.Rmd`
+  - Do EDA and come up with an interesting analysis to chase down
+    - List all of your questions (you don't necessarily have to answer them all)
+  - You must:
+    - Utilize `ggplot` plotting
+    - Use `dplyr` data manipulation
+    - Use `if_else` within a `mutate` function
+    - Use `group_by` and `summarize`
+    
+Choose a data set from one of the following:  
+
+  - [Black Friday](https://www.kaggle.com/mehdidag/black-friday)
+  - [Wine Reviews](https://www.kaggle.com/zynicide/wine-reviews)
+  - [LA Parking Citations](https://www.kaggle.com/cityofLA/los-angeles-parking-citations)
+
 ### Hint: download a csv and then use the readr::read_csv('your_file_location')
 ```{r}
+library(tidyverse)
+```
 
+```{r}
+dat <- readr::read_csv("winemag-data-130k-v2.csv")
+```
+
+```{r}
+summary(dat)
+
+```
+
+```{r}
+ggplot(data = winedat) + 
+  geom_bar(mapping = aes(x = country)) + 
+  coord_flip()
+
+
+
+```
+
+
+```{r}
+  
+countrydat <- dat %>%
+  group_by(country) %>%
+  summarize (n= n()) %>%
+  mutate(pct_n = n / sum(n))%>%
+  arrange(desc(n)) %>%
+  mutate(pct_n_running = cumsum(pct_n)) %>%
+  mutate(country1000= if_else(n >= 1000,country,'Rest'))
+```
+
+
+
+
+```{r}
+varietydat <- dat %>%
+  group_by(variety) %>%
+  summarize (n= n()) %>%
+  mutate(pct_n = n / sum(n))%>%
+  arrange(desc(n)) %>%
+  mutate(pct_n_running = cumsum(pct_n)) %>%
+  mutate(variety1000= ifelse(n >= 1000,variety,'Rest'))
+```
+
+```{r}
+tasterdat <- winedat %>%
+  group_by(taster_name) %>%
+  summarize(n = n()) %>%
+  arrange(desc(n)) %>%
+  mutate(taster = if_else(is.na(taster_name), 'Unknown', taster_name))
+  
+```
+
+```{r}
+winejoindat1 <-
+left_join(winedat, countrydat, by = c("country" = "country"))
+
+```
+
+```{r}
+winejoindat2 <-
+  left_join(winejoindat1, varietydat, by = c("variety" = "variety"))
+```
+
+
+```{r}
+winejoindat3 <-
+  left_join(winejoindat2, tasterdat, by = c("taster_name" = "taster_name"))
+```
+
+```{r}
+coolwinedat <-
+    select(winejoindat3, points, price, country1000, variety1000, taster)
+```
+
+```{r}
+library(data.table)
+coolwinedat <- rename(coolwinedat, 'Country' = country1000,'Points' = points, 'Price' = price, 'Variety' = variety1000, 'Taster' = taster)
+coolwinedat
+```
+
+```{r}
+summary(coolwinedat)
+```
+
+```{r}
+coolwinedat <- na.omit(coolwinedat)
+summary(coolwinedat)
+```
+
+```{r}
+ggplot(coolwinedat, aes(x= Points, y = Price, color = Country))+
+  geom_point()
+```
+
+```{r}
+ggplot(coolwinedat, aes(x= Country, y = Price, color = Points))+
+  geom_point()+
+  coord_flip()
+```
+
+## I want to try and figure out how to do all those steps before into one group of code:
+
+```{r}
+library(tidyverse)
+dat <- readr::read_csv("winemag-data-130k-v2.csv")
+
+countrydat <- dat %>%
+  group_by(country) %>%
+  summarize (n= n()) %>%
+  mutate(pct_n = n / sum(n))%>%
+  arrange(desc(n)) %>%
+  mutate(pct_n_running = cumsum(pct_n)) %>%
+  mutate(country1000= if_else(n >= 1000,country,'Rest'))
+
+varietydat <- dat %>%
+  group_by(variety) %>%
+  summarize (n= n()) %>%
+  mutate(pct_n = n / sum(n))%>%
+  arrange(desc(n)) %>%
+  mutate(pct_n_running = cumsum(pct_n)) %>%
+  mutate(variety1000= ifelse(n >= 1000,variety,'Rest'))
+
+tasterdat <- winedat %>%
+  group_by(taster_name) %>%
+  summarize(n = n()) %>%
+  arrange(desc(n)) %>%
+  mutate(taster = if_else(is.na(taster_name), 'Unknown', taster_name))
+
+sweetdat <-
+left_join(winedat, countrydat, by = c("country" = "country"))
+
+sweetdat <-
+  left_join(sweetdat, varietydat, by = c("variety" = "variety"))
+
+sweetdat <-
+  left_join(sweetdat, tasterdat, by = c("taster_name" = "taster_name"))
+
+sweetdat <- na.omit(sweetdat)
+summary(sweetdat)
+  
 ```
 
