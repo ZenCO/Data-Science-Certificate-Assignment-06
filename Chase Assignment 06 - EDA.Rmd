@@ -1,12 +1,12 @@
 ---
-title: "Assignment 06 - EDA"
-author: "Scott Stoltzman"
-date: "5/29/2019"
+title: "Assignment 06 - Wine EDA"
+author: "Chase Smith"
+date: "6/12/2019"
 output: html_document
 ---
 
 
-# Do your EDA Work in this file!
+
 
 # Data-Science-Certificate-Assignment-06
 Exploratory data analysis (EDA)
@@ -15,7 +15,7 @@ Exploratory data analysis (EDA)
 
   - Open `Assignment 06 - EDA.Rmd`
   - Do EDA and come up with an interesting analysis to chase down
-    - List all of your questions (you don't necessarily have to answer them all)
+    - List all of your questions (you don't necessarily have to answer them all)  ***Did not do this step***
   - You must:
     - Utilize `ggplot` plotting
     - Use `dplyr` data manipulation
@@ -25,7 +25,7 @@ Exploratory data analysis (EDA)
 Choose a data set from one of the following:  
 
   - [Black Friday](https://www.kaggle.com/mehdidag/black-friday)
-  - [Wine Reviews](https://www.kaggle.com/zynicide/wine-reviews)
+  - [Wine Reviews](https://www.kaggle.com/zynicide/wine-reviews)  ***Selected this data set***
   - [LA Parking Citations](https://www.kaggle.com/cityofLA/los-angeles-parking-citations)
 
 ### Hint: download a csv and then use the readr::read_csv('your_file_location')
@@ -33,11 +33,12 @@ Choose a data set from one of the following:
 
 
 
-## I want to try and figure out how to do all those steps before into one group of code:
+## Here is where all of my data manipulation happens:
 
 ```{r}
 library(tidyverse)
 dat <- readr::read_csv("winemag-data-130k-v2.csv")
+
 
 countrydat <- dat %>%
   group_by(country) %>%
@@ -57,7 +58,7 @@ varietydat <- dat %>%
   mutate(variety1000= ifelse(n >= 1000,variety,'Rest')) %>%
   mutate(varietyn= n)
 
-tasterdat <- winedat %>%
+tasterdat <- dat %>%
   group_by(taster_name) %>%
   summarize(n = n()) %>%
   arrange(desc(n)) %>%
@@ -65,7 +66,7 @@ tasterdat <- winedat %>%
   mutate(tastern= n)
 
 sweetdat <-
-left_join(winedat, countrydat, by = c("country" = "country"))
+left_join(dat, countrydat, by = c("country" = "country"))
 
 sweetdat <-
   left_join(sweetdat, varietydat, by = c("variety" = "variety"))
@@ -96,25 +97,26 @@ ggplot(sweetdat, aes(x= points, y = price))+
   geom_point()
 ```
 
+##Looking at Price vs Points with the price under $500 and adding alpha shading for density
 
 ```{r}
 ggplot(filter(sweetdat, price <= 500), aes(x= points, y = price))+
-  geom_smooth()+
-  geom_point()
+  geom_jitter(alpha = 0.2)+
+  geom_smooth()
 ```
 
 
 A quick look shows that 
 ```{r}
 ggplot(sweetdat, aes(x= points, y = price, color = country))+
-  geom_point()+
+  geom_jitter(alpha = 0.3)+
   geom_smooth()
 
 ```
 
 ```{r}
 ggplot(filter(sweetdat, price <= 500), aes(x= points, y = price, color = country))+
-  geom_point()+
+  geom_jitter(alpha = 0.3)+
   geom_smooth()
 
 ```
@@ -125,24 +127,27 @@ ggplot(filter(sweetdat, price <= 500), aes(x= points, y = price, color = country
 
 ```{r}
 ggplot(filter(sweetdat, price<=500), aes(x= points, y = price, color = country))+
-  geom_point()+
-  geom_smooth()+
+  geom_jitter(alpha = 0.3)+
+  geom_smooth(col = 'black')+
   facet_wrap(~country)
 ```
 
 
 ```{r}
-ggplot(sweetdat, aes(x= points, y = price, color = country))+
-  geom_point()+
-  facet_wrap(~taster)
+ggplot(sweetdat, aes(x= points, y = price, color = country, legend = FALSE))+
+  geom_jitter(alpha = 0.3)+
+  facet_wrap(~taster)+
+  theme(legend.position = "none")
 ```
 
 
 ♣
 ```{r}
-ggplot(filter(sweetdat, price<=500), aes(x= points, y = price, color = country))+
-  geom_point()+
-  facet_wrap(~taster)
+suppressWarnings(print(
+  ggplot(filter(sweetdat, price<=500), aes(x= points, y = price, color = country, alpha = 0.2))+
+  geom_jitter(alpha = 0.3)+
+  facet_wrap(~taster)+
+  geom_smooth(col = 'Black')))
 ```
 
 
@@ -192,9 +197,9 @@ ggplot(data = sweetdat)+
 
 ```{r}
 ggplot(data = sweetdat)+
-  stat_summary(mapping = aes(x = reorder(taster,desc(taster)), y = price))+
+  stat_summary(mapping = aes(x = reorder(taster,desc(taster)), y = points))+
   coord_flip()+
-  labs(x = "Reviewer", y = "Price")
+  labs(x = "Reviewer", y = "Points")
 
 ```
 
